@@ -12,6 +12,13 @@ def dict_factory(cursor, row):
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+
+def params_to_list(param):
+    result = []
+    for val in param.split(','):
+        if val:
+            result.append(val)
+    return result
 # Routes
 
 @app.route('/', methods = ['GET'])
@@ -41,18 +48,18 @@ def api_all():
 
 @app.route("/api/v1/resources/drugs", methods = ['GET'])
 def api_name():
-    if 'name' in request.args:
-        drug_name = request.args['name']
+    request_data={}
+    if 'list' in request.args:
+        drug_list = request.args.getlist('list')
+        if len(drug_list)==1 and ',' in drug_list[0]:
+            request_data['drugs'] = params_to_list(drug_list[0])
+        else:
+            request_data['drugs'] = drug_list
     else:
         return "Error: No name field provided!"
 
-    results = []
-    
-    for drug in drugs:
-        if drug['name'] == drug_name:
-            results.append(drug)
 
-    return jsonify(results)
+    return jsonify(request_data)
 
 @app.errorhandler(404)
 def page_not_found(e):
