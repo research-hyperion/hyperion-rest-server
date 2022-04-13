@@ -5,23 +5,6 @@ import sqlite3
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
-#Test data drugs
-drugs = [
-            {
-                'id':0,
-                'name':"uptenol",
-            },
-            {
-                'id':1,
-                'name':"umftenol",
-            },
-            {
-                'id':2,
-                'name':"uvtenol",
-            },
-
-        ]
-
 # Database
 
 def dict_factory(cursor, row):
@@ -39,6 +22,7 @@ def home():
 def api_dbversion():
     sql_query = "select * from dbversion;"
     connection = sqlite3.connect('hyperion.db')
+    connection.row_factory = dict_factory
     cursor = connection.cursor()
     entry = cursor.execute(sql_query).fetchall()
     return jsonify(entry)
