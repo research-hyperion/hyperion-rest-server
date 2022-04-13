@@ -1,7 +1,23 @@
 import flask
 from flask import request, jsonify
 import sqlite3
+from logging.config import dictConfig
 
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
@@ -19,6 +35,18 @@ def params_to_list(param):
         if val:
             result.append(val)
     return result
+
+def get_interaction_pairs_from_list(drug_list):
+    interaction_pairs=[]
+    for drug1 in drug_list:
+        for drug2 in drug_list:
+            if drug1==drug2:
+                continue
+            elif (drug1,drug2) in interaction_pairs or (drug2,drug1) in interaction_pairs:
+                continue
+            else:
+                interaction_pairs.append((drug1,drug2))
+    return interaction_pairs
 # Routes
 
 @app.route('/', methods = ['GET'])
@@ -48,13 +76,31 @@ def api_all():
 
 @app.route("/api/v1/resources/drugs", methods = ['GET'])
 def api_name():
-    request_data={}
+    request_data=[]
     if 'list' in request.args:
         drug_list = request.args.getlist('list')
-        if len(drug_list)==1 and ',' in drug_list[0]:
-            request_data['drugs'] = params_to_list(drug_list[0])
+        drug_list = params_to_list(drug_list[0])
+        app.logger.warning(drug_list)
+        interaction_pairs = []
+        if len(drug_list)>=2:
+            #prepare interaction pairs
+            app.logger.info("Get interaction pairs from drug list {0}".format(drug_list))
+            interaction_pairs = get_interaction_pairs_from_list(drug_list)
+            app.logger.info("Interaction pairs:{0}".format(interaction_pairs))
+            #Check database for interactions
+            connection = sqlite3.connect('hyperion.db')
+            connection.row_factory = dict_factory
+            cursor = connection.cursor()
+            for pair in interaction_pairs:
+                sql_query = "select drug1name,drug2name,interactioncode from interactions where lower(drug1name) = \'{0}\' and lower(drug2name)=\'{1}\';".format(pair[0],pair[1])
+                entry = cursor.execute(sql_query).fetchall()
+                app.logger.info(entry)
+                if entry:
+                    request_data.append(entry[0])
+            return jsonify(request_data)
+            
         else:
-            request_data['drugs'] = drug_list
+            return "Error: Minimum 2 drugs must be specified!"
     else:
         return "Error: No name field provided!"
 
