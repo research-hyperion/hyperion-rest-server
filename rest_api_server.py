@@ -60,6 +60,7 @@ def api_dbversion():
     connection.row_factory = dict_factory
     cursor = connection.cursor()
     entry = cursor.execute(sql_query).fetchall()
+    connection.close()
     return jsonify(entry)
 
 
@@ -70,6 +71,7 @@ def api_all():
     connection.row_factory = dict_factory
     cursor = connection.cursor()
     all_database_entries = cursor.execute(sql_query).fetchall()
+    connection.close()
     return jsonify(all_database_entries)
 
 
@@ -97,6 +99,7 @@ def api_name():
                 app.logger.info(entry)
                 if entry:
                     request_data.append(entry[0])
+            connection.close()
             return jsonify(request_data)
             
         else:
