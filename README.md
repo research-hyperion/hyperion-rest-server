@@ -71,3 +71,43 @@ Response:
   }
 ]
 ```
+
+### Drug-Drug interaction prediction
+
+Request:
+
+```
+curl http://127.0.0.1:5000/api/v1/resources/scores?list=macimorelin,metformin
+```
+
+Response:
+
+```json
+[
+    {
+	"dbid1":"DB13074",
+	"dbid2":"DB00331",
+	"drugname1":"macimorelin",
+	"drugname2":"metformin",
+	"mild_score":
+	    {
+		"high":13.015819058980911,
+		"low":0,
+		"medium":0
+	    },
+	"moderate_score":
+	    {
+		"high":13.087586916787519,
+		"low":0,
+		"medium":0
+	    },
+	"severe_score":
+	    {
+		"high":0,
+		"low":0.1956186206621379,
+		"medium":0
+	    }
+    }
+]
+```
+
